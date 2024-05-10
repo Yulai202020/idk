@@ -1,7 +1,7 @@
 import socket, threading
 
 n = 1024
-HOST = ("192.168.100.37", 9999)
+HOST = ("192.168.100.37", 10000)
 
 def listen(client):
     while True:

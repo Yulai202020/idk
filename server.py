@@ -3,61 +3,37 @@ import threading
 
 # vars
 
+clients_count = 2
+
 HOST1 = ("192.168.100.37", 10000)
-HOST2 = ("192.168.100.37", 9999)
-sockets = [socket.socket(socket.AF_INET, socket.SOCK_STREAM), socket.socket(socket.AF_INET, socket.SOCK_STREAM)]
 
-# init
-
-sockets[0].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-sockets[1].setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-sockets[0].bind(HOST1)
-sockets[1].bind(HOST2)
-
-sockets[0].listen()
-sockets[1].listen()
-
-
-conn, addr = sockets[0].accept()
-conn1, addr1 = sockets[1].accept()
+sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sck.bind(HOST1)
+sck.listen()
 
 # listeners
 
-def listen_A():
+def handle(id_):
     while True:
         req = ''
 
         while True:
-            data = conn.recv(1024)
+            data = list_of_conns[id_][0].recv(1024)
             if not data:
                 break
-            conn1.sendall(data)
 
-def listen_B():
-    while True:
-        req = ''
+            for i in range(count):
+                if i == id_:
+                    continue
+                list_of_conns[i][0].sendall(data)
 
-        while True:
-            data = conn1.recv(1024)
-            if not data:
-                break
-            conn.sendall(data)
+list_of_conns = []
 
-if __name__ =="__main__":
-    try:
-        A = threading.Thread(target=listen_A)
-        B = threading.Thread(target=listen_B)
-    
-        A.start()
-        B.start()
-    
-        A.join()
-        B.join()
-
-    except: 
-        exit()
-
-    finally:
-        conn.close()
-        conn1.close()
+count = 0
+while True: 
+    conn, addr = sck.accept()
+    list_of_conns.append((conn, addr))
+    user_thread = threading.Thread(target=handle, args=(count,))
+    user_thread.start()
+    count+=1
