@@ -1,9 +1,9 @@
 import socket
 import threading
-
+import queue
 # vars
 
-clients_count = 2
+clients = {}
 
 HOST1 = ("192.168.100.37", 10000)
 
@@ -12,28 +12,48 @@ sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sck.bind(HOST1)
 sck.listen()
 
-# listeners
-
-def handle(id_):
-    while True:
-        req = ''
-
-        while True:
-            data = list_of_conns[id_][0].recv(1024)
-            if not data:
-                break
-
-            for i in range(count):
-                if i == id_:
-                    continue
-                list_of_conns[i][0].sendall(data)
-
 list_of_conns = []
 
+def send(data, nickname):
+    global clients
+
+    for i in list(clients.keys()):
+        if i == nickname:
+            continue
+
+        end = '\n' + data.decode()
+
+        clients[i].sendall(end.encode())
+
+def handle(nickname):
+    global clients
+
+    while True:
+        data = b''
+        try:
+            data = clients[nickname].recv(1024)
+        except:
+            del clients[nickname]
+            break
+
+        if not data:
+            break
+
+        send(data, nickname)
+
 count = 0
-while True: 
+while True:
     conn, addr = sck.accept()
-    list_of_conns.append((conn, addr))
-    user_thread = threading.Thread(target=handle, args=(count,))
+
+    conn.send(b'NICK')
+    nickname = conn.recv(1024).decode()
+
+    while nickname in clients:
+        conn.send(b'ER_NICKNAME_IS_EXITS')
+        nickname = conn.recv(1024).decode()
+
+    clients[nickname] = conn
+
+    user_thread = threading.Thread(target=handle, args=(nickname,))
     user_thread.start()
     count+=1

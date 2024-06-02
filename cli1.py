@@ -3,6 +3,8 @@ import socket, threading
 n = 1024
 HOST = ("192.168.100.37", 10000)
 
+nickname = input("Enter your nickname: ")
+
 def listen(client):
     while True:
         data = client.recv(1024)
@@ -23,7 +25,8 @@ def send(client):
         if message == "":
             continue
 
-        client.send(message.encode())
+        formated = f"{nickname}: {message}"
+        client.send(formated.encode())
         print("Message sended.")
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
